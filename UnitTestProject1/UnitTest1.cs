@@ -164,26 +164,5 @@ namespace UnitTestProject1
 
             p.Check();
         }
-
-        [TestMethod]
-        public void TestEmail()
-        {
-            var mailMessage = new MimeMessage();
-            mailMessage.From.Add(new MailboxAddress("Hello", "gingin.gui@gmail.com"));
-            mailMessage.To.Add(new MailboxAddress("Jian", "ljianl@yahoo.com.au"));
-            mailMessage.Subject = "Test";
-            mailMessage.Body = new TextPart("plain")
-            {
-                Text = "Hello"
-            };
-
-            using (var smtpClient = new SmtpClient())
-            {
-                smtpClient.Connect("smtp.gmail.com", 465, MailKit.Security.SecureSocketOptions.SslOnConnect);
-                smtpClient.Authenticate("gingin.gui@gmail.com", "Porky20151228");
-                smtpClient.Send(mailMessage);
-                smtpClient.Disconnect(true);
-            }
-        }
     }
 }
