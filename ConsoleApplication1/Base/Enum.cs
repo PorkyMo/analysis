@@ -33,4 +33,12 @@
         MovingForward,
         MovingBackward
     }
+
+    public enum EventType
+    {
+        UpCross,
+        DownCross,
+        TopPole,
+        BottomPole
+    }
 }

@@ -2,283 +2,97 @@
 using System.IO;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using DataAnalyst.Cross;
-using DataAnalyst.Pole;
 
 namespace DataAnalyst.Base
 {
     public class StockData
     {
-        private int CrossRange = 1;
-        private List<int> Intervals = new List<int>() { 5, 10, 20, 30};
+        private List<int> Intervals = new List<int>() { 5, 10, 20, 30, 60};
         public string Code { get; set; }
         public string Name { get; set; }
         public Exchange StockExchange { get; set; }
         public PriceList RawData = new PriceList();
-        public List<PriceList> PeriodData = new List<PriceList>(); // contain day, week, month period data
-        public List<PriceList> AveragedData = new List<PriceList>(); // contain average data (5/10/20/60) for each period
-        public List<CrossData> StockCrossData = new List<CrossData>();
-        public List<DoublePole> DoublePoles = new List<DoublePole>();
-        public List<DateTime> Turnings = new List<DateTime>();
-
-        private void AddAveragedData(Period period)
-        {
-            if (FindAverageDataList(period, Intervals[0]) == null)
-            {
-                Intervals.ForEach(i => AddAveragedData(period, i));
-            }
-        }
-
-        private void ClearAveragedData()
-        {
-            AveragedData.Clear();
-        }
-
-        public PriceList GetPeriodPriceList(Period period)
-        {
-            if (period == Period.Day)
-                return RawData;
-
-            return PeriodData.Find(pl => pl.Period == period);
-        }
-
-        public void AddAveragedData(Period period, int interval)
-        {
-            AveragedData.Add(MathLib.GetAveragePrice(MathLib.ConvertPeriod(RawData, period), interval));
-        }
-
-        public PriceList FindAverageDataList(Period period, int interval)
-        {
-            return AveragedData.Find(l => l.Period == period && l.interval == interval);
-        }
-
-        //crossup: avgList1 crossup avgList2
-        public bool AveragedPriceCrossed(PriceList avgList1, PriceList avgList2, DateTime date, bool crossUp)
-        {
-            if (avgList1 == null || avgList2 == null || avgList1.Period != avgList2.Period || avgList1.interval == avgList2.interval)
-            {
-                return false;
-            }
-
-            var adjustedDate = MathLib.GetDateForPeriod(date, avgList1.Period);
-                        
-            var index1 = avgList1.FindIndex(adjustedDate, DateNotFound.None);
-            var index2 = avgList2.FindIndex(adjustedDate, DateNotFound.None);
-            var previousIndex1 = index1 - 1;
-            var previousIndex2 = index2 - 1;
-            
-            if (previousIndex1 < 0 || previousIndex2 < 0)
-            {
-                return false;
-            }
-
-            if (avgList1[index1].Date != avgList2[index2].Date || avgList1[previousIndex1].Date != avgList2[previousIndex2].Date)
-            {
-                return false;
-            }
-
-            if (crossUp)
-            {
-                return avgList1[previousIndex1].Close <= avgList2[previousIndex2].Close &&
-                    avgList1[index1].Close >= avgList2[index2].Close;
-            }
-            else
-            {
-                return avgList1[previousIndex1].Close >= avgList2[previousIndex2].Close &&
-                    avgList1[index1].Close <= avgList2[index2].Close;
-            }
-        }
-
-        public bool AveragedPriceCrossed(PriceList avgList1, PriceList avgList2, DateTime date, int intervalRange, bool crossUp)
-        {
-            if (avgList1 == null || avgList2 == null || avgList1.Period != avgList2.Period || avgList1.interval == avgList2.interval)
-            {
-                return false;
-            }
-
-            var adjustedDate = MathLib.GetDateForPeriod(date, avgList1.Period);
-
-            var index1 = avgList1.FindIndex(adjustedDate, DateNotFound.None);
-            var index2 = avgList2.FindIndex(adjustedDate, DateNotFound.None);
-            if (index1 < 0 || index2 < 0 || index1 < intervalRange || index2 < intervalRange)
-            {
-                return false;
-            }
-
-            if (crossUp)
-            {
-                if (avgList1[index1].Close >= avgList2[index2].Close)
-                {
-                    for(var i = 1; i <= intervalRange; i++)
-                    {
-                        if (avgList1[index1 - i].Date != avgList2[index2 - i].Date)
-                        {
-                            return false;
-                        }
-                        if (avgList1[index1 - i].Close <= avgList2[index2 - i].Close)
-                        {
-                            return true;
-                        }
-                    }
-                }
-
-                return false;
-            }
-            else
-            {
-                if (avgList1[index1].Close <= avgList2[index2].Close)
-                {
-                    for (var i = 1; i < intervalRange; i++)
-                    {
-                        if (avgList1[index1 - i].Date != avgList2[index2 - i].Date)
-                        {
-                            return false;
-                        }
-                        if (avgList1[index1 - i].Close >= avgList2[index2 - i].Close)
-                        {
-                            return true;
-                        }
-                    }
-                }
-
-                return false;
-            }
-        }
+        public List<AnalysedData> StockAnalysedData = new List<AnalysedData>();
 
         public void FindCross(Period period, int range, bool crossUp, DateTime startDate)
         {
-            CrossRange = range;
-
-            StockCrossData.Clear();
-
-            AddAveragedData(period);
-            startDate = MathLib.GetDateForPeriod(startDate, period);
-            var dataShort = FindAverageDataList(period, Intervals[0]);
-            var dataMedium = FindAverageDataList(period, Intervals[1]);
-            var dataLong = FindAverageDataList(period, Intervals[2]);
-            var dataLonger = FindAverageDataList(period, Intervals[3]);
-
-            var shortIndex = dataShort.FindIndex(startDate, DateNotFound.None);
-            var mediumIndex = dataMedium.FindIndex(startDate, DateNotFound.None);
-            var longIndex = dataLong.FindIndex(startDate, DateNotFound.None);
-            var longerIndex = dataLonger.FindIndex(startDate, DateNotFound.None);
-
-            if (shortIndex < 0 || mediumIndex < 0 || longIndex < 0 || longerIndex < 0)
+            var analysedData = StockAnalysedData.Find(ad => ad.Period == period);
+            if (analysedData != null)
             {
-                return;
-            }
-
-            var count = dataShort.Count;
-            if (longerIndex < CrossRange)
-            {
-                return;
-            }
-            
-            for (var i = shortIndex; i < dataShort.Count; i++)
-            {
-                if (AveragedPriceCrossed(dataShort, dataMedium, dataShort[i].Date, CrossRange, crossUp)
-                    && AveragedPriceCrossed(dataShort, dataLong, dataShort[i].Date, CrossRange, crossUp)
-                    && AveragedPriceCrossed(dataShort, dataLonger, dataShort[i].Date, CrossRange, crossUp))
-                {
-                    //Console.WriteLine($"find {Code} in {dataShort[count - i - 1].Date}" 
-                    //    + (dataShort[count - i - 1].Close < RawData[RawData.Count-1].Close ? "price up" : "price down"));
-                    StockCrossData.Add(new CrossData {
-                        Period = period, CrossDate = dataShort[i].Date,
-                        Direction = crossUp ? CrossDirection.Up : CrossDirection.Down});
-                }
+                analysedData.FindCross(range, crossUp, startDate);
             }
         }
 
-        //this function find turning from startDate and forward
-        public void FindTurningForward(Period period, DateTime startDate, int range)
+        public void FindPoles(Period period, DateTime startDate, DateTime endDate)
         {
-            AddAveragedData(period);
-            Turnings.Clear();
-
-            var dataShort = FindAverageDataList(period, Intervals[0]);
-            var dataMedium = FindAverageDataList(period, Intervals[1]);
-            var dataLong = FindAverageDataList(period, Intervals[2]);
-            var dataLonger = FindAverageDataList(period, Intervals[3]);
-
-            //first find an available start date
-            while (startDate < DateTime.Today)
+            var analysedData = StockAnalysedData.Find(ad => ad.Period == period);
+            if (analysedData != null)
             {
-                startDate = MathLib.GetDateForPeriod(startDate, period);
-
-                var shortIndex = dataShort.FindIndex(startDate, DateNotFound.None);
-                var mediumIndex = dataMedium.FindIndex(startDate, DateNotFound.None);
-                var longIndex = dataLong.FindIndex(startDate, DateNotFound.None);
-                var longerIndex = dataLonger.FindIndex(startDate, DateNotFound.None);
-
-                if (shortIndex > 0 && mediumIndex > 0 && longIndex > 0 && longerIndex > 0)
-                {
-                    if (longerIndex > CrossRange)
-                    {
-                        break;
-                    }
-                }
-
-                startDate = startDate.AddDays(1);
+                analysedData.FindPoles(startDate, endDate);
             }
-
-            if (startDate < DateTime.Today)
-            {
-                var priceLists = new List<PriceList> { dataShort, dataMedium, dataLong, dataLonger };
-                Turnings.AddRange(CrossDataLib.FindTurningsForward(priceLists, startDate, range, true));
-            }
-
-            ClearAveragedData();
         }
 
-        //this function find turning from the latest date and backward till reaching endDate
-        public void FindTurningBackward(Period period, DateTime endDate, int range)
+        public void FindDoublePole(Period period, DateTime startDate, DateTime endDate, Direction trend)
         {
-            AddAveragedData(period);
-            Turnings.Clear();
-
-            var dataShort = FindAverageDataList(period, Intervals[0]);
-            var dataMedium = FindAverageDataList(period, Intervals[1]);
-            var dataLong = FindAverageDataList(period, Intervals[2]);
-            var dataLonger = FindAverageDataList(period, Intervals[3]);
-
-            var currentDate = DateTime.Today;
-            //first find an available start date
-            while (endDate < currentDate)
+            var analysedData = StockAnalysedData.Find(ad => ad.Period == period);
+            if (analysedData != null)
             {
-                currentDate = MathLib.GetDateForPeriod(currentDate, period);
-
-                var shortIndex = dataShort.FindIndex(currentDate, DateNotFound.None);
-                var mediumIndex = dataMedium.FindIndex(currentDate, DateNotFound.None);
-                var longIndex = dataLong.FindIndex(currentDate, DateNotFound.None);
-                var longerIndex = dataLonger.FindIndex(currentDate, DateNotFound.None);
-
-                if (shortIndex > 0 && mediumIndex > 0 && longIndex > 0 && longerIndex > 0)
-                {
-                    if (longerIndex > range)
-                    {
-                        break;
-                    }
-                }
-
-                currentDate = currentDate.AddDays(-1);
+                analysedData.FindDoublePole(Code, startDate, endDate, trend);
             }
-
-            if (endDate < currentDate)
-            {
-                var priceLists = new List<PriceList> { dataShort, dataMedium, dataLong, dataLonger };
-                Turnings.AddRange(CrossDataLib.FindTurningsBackward(priceLists, currentDate, endDate, range, true));
-            }
-
-            ClearAveragedData();
         }
 
-        public Tuple<string, PriceItem> GetPrictItem(DateTime date, Period period)
+        public void FindDoublePolesWithCross(Period period, int barCount, Direction trend)
         {
-            var periodData = PeriodData.Find(pd => pd.Period == period);
-            if (periodData == null)
-                return null;
-            var priceItem = periodData?.FindItemByDate(date);
-            return priceItem == null ? null : new Tuple<string, PriceItem>(Code, priceItem);
+            var analysedData = StockAnalysedData.Find(ad => ad.Period == period);
+            if (analysedData != null)
+            {
+                analysedData.FindDoublePolesWithCross(Code, barCount, trend);
+            }
+        }
+
+        public CrossDataInfo GetCrossDataInfo(Period period)
+        {
+            return new CrossDataInfo
+            {
+                Code = Code,
+                Name = Name,
+                StockExchange = StockExchange,
+                Period = period,
+                CrossDataList = StockAnalysedData.Find(ad => ad.Period == period).StockCrossData
+            };
+        }
+
+        public DoublePoleDataInfo GetDoublePoleDataInfo(Period period)
+        {
+            return new DoublePoleDataInfo
+            {
+                Code = Code,
+                Name = Name,
+                StockExchange = StockExchange,
+                Period = period,
+                DoublePoles = StockAnalysedData.Find(ad => ad.Period == period).DoublePoles
+            };
+        }
+
+        public TimelineInfo GetTimelineInfo(Period period)
+        {
+            return new TimelineInfo
+            {
+                Code = Code,
+                Name = Name,
+                StockExchange = StockExchange,
+                Period = period,
+                Timeline = StockAnalysedData.Find(ad => ad.Period == period).Timeline
+            };
+        }
+
+        public void BuildTimeline(Period period, DateTime startDate, DateTime endDate)
+        {
+            var analysedData = StockAnalysedData.Find(ad => ad.Period == period);
+            if (analysedData != null)
+            {
+                this.StockAnalysedData.ForEach(d => d.BuildTimeLine(startDate, endDate));
+            }
         }
 
         public static async Task<StockData> ReadData(string filePath, DateTime startDay, DateTime lastDay)
@@ -296,7 +110,6 @@ namespace DataAnalyst.Base
             }
             catch(Exception ex)
             {
-              
             }
 
             await sr.ReadLineAsync().ConfigureAwait(false);
@@ -341,7 +154,9 @@ namespace DataAnalyst.Base
 
             foreach (var v in Enum.GetValues(typeof(Period)))
             {
-                stockData.PeriodData.Add(MathLib.ConvertPeriod(stockData.RawData, (Period)v));
+                //redundant
+                //stockData.PeriodData.Add(MathLib.ConvertPeriod(stockData.RawData, (Period)v));
+                stockData.StockAnalysedData.Add(new AnalysedData((Period)v, stockData.RawData));
             }
 
             return stockData;

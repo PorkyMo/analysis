@@ -22,7 +22,7 @@ namespace DataAnalyst.Cross
 
             var findCrossStartDate = crossDateTime;
 
-            data.DataList.ForEach(d => d.FindCross(crossPeriod, 2, true, findCrossStartDate));
+            data.DataList.ForEach(d => d.FindCross(crossPeriod, 7, true, findCrossStartDate));
 
             //foreach (var cross in crosses)
             //{
@@ -132,6 +132,99 @@ namespace DataAnalyst.Cross
             }
 
             return turnings;
+        }
+
+        //crossup: avgList1 crossup avgList2
+        public static bool AveragedPriceCrossed(PriceList avgList1, PriceList avgList2, DateTime date, bool crossUp)
+        {
+            if (avgList1 == null || avgList2 == null || avgList1.Period != avgList2.Period || avgList1.interval == avgList2.interval)
+            {
+                return false;
+            }
+
+            var adjustedDate = MathLib.GetDateForPeriod(date, avgList1.Period);
+
+            var index1 = avgList1.FindIndex(adjustedDate, DateNotFound.None);
+            var index2 = avgList2.FindIndex(adjustedDate, DateNotFound.None);
+            var previousIndex1 = index1 - 1;
+            var previousIndex2 = index2 - 1;
+
+            if (previousIndex1 < 0 || previousIndex2 < 0)
+            {
+                return false;
+            }
+
+            if (avgList1[index1].Date != avgList2[index2].Date || avgList1[previousIndex1].Date != avgList2[previousIndex2].Date)
+            {
+                return false;
+            }
+
+            if (crossUp)
+            {
+                return avgList1[previousIndex1].Close <= avgList2[previousIndex2].Close &&
+                    avgList1[index1].Close >= avgList2[index2].Close;
+            }
+            else
+            {
+                return avgList1[previousIndex1].Close >= avgList2[previousIndex2].Close &&
+                    avgList1[index1].Close <= avgList2[index2].Close;
+            }
+        }
+
+        public static bool AveragedPriceCrossed(PriceList avgList1, PriceList avgList2, DateTime date, int intervalRange, bool crossUp)
+        {
+            if (avgList1 == null || avgList2 == null || avgList1.Period != avgList2.Period || avgList1.interval == avgList2.interval)
+            {
+                return false;
+            }
+
+            var adjustedDate = MathLib.GetDateForPeriod(date, avgList1.Period);
+
+            var index1 = avgList1.FindIndex(adjustedDate, DateNotFound.None);
+            var index2 = avgList2.FindIndex(adjustedDate, DateNotFound.None);
+            if (index1 < 0 || index2 < 0 || index1 < intervalRange || index2 < intervalRange)
+            {
+                return false;
+            }
+
+            if (crossUp)
+            {
+                if (avgList1[index1].Close >= avgList2[index2].Close)
+                {
+                    for (var i = 1; i <= intervalRange; i++)
+                    {
+                        if (avgList1[index1 - i].Date != avgList2[index2 - i].Date)
+                        {
+                            return false;
+                        }
+                        if (avgList1[index1 - i].Close <= avgList2[index2 - i].Close)
+                        {
+                            return true;
+                        }
+                    }
+                }
+
+                return false;
+            }
+            else
+            {
+                if (avgList1[index1].Close <= avgList2[index2].Close)
+                {
+                    for (var i = 1; i < intervalRange; i++)
+                    {
+                        if (avgList1[index1 - i].Date != avgList2[index2 - i].Date)
+                        {
+                            return false;
+                        }
+                        if (avgList1[index1 - i].Close >= avgList2[index2 - i].Close)
+                        {
+                            return true;
+                        }
+                    }
+                }
+
+                return false;
+            }
         }
     }
 }

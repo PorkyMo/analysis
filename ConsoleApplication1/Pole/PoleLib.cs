@@ -10,24 +10,40 @@ namespace DataAnalyst.Pole
         private static DateTime StartDate = new DateTime(2020, 03, 01);
         private static Direction Trend = Direction.Down;
 
-        public static void FindDoublePoles(StockDataSet data, Period period, DateTime startDate, DateTime endDate)
-        {
-            var doubles = new List<DoublePole>();
-            data.DataList.ForEach(stockData => {
-                stockData.DoublePoles.Clear();
-                FindDoublePole(stockData, period, startDate, endDate);
-            });
-        }
+        //public static void FindDoublePoles(StockDataSet data, Period period, DateTime startDate, DateTime endDate)
+        //{
+        //    var doubles = new List<DoublePole>();
+        //    data.DataList.ForEach(stockData => {
+        //        stockData.DoublePoles.Clear();
+        //        FindDoublePole(stockData, period, startDate, endDate);
+        //    });
+        //}
 
-        public static void FindDoublePole(StockData stockData, Period period, DateTime startDate, DateTime endDate)
-        {
-            var poles = FindPoles(stockData.GetPeriodPriceList(period), startDate, endDate);
-            var result = FindDoublePole(stockData.Code, poles, Trend, period);
-            if (result != null)
-                stockData.DoublePoles.Add(result);
-        }
+        //public static void FindDoublePole(StockData stockData, Period period, DateTime startDate, DateTime endDate)
+        //{
+        //    var poles = FindPoles(stockData.GetPeriodPriceList(period), startDate, endDate);
+        //    var result = FindDoublePole(stockData.Code, poles, Trend, period);
+        //    if (result != null)
+        //        stockData.DoublePoles.Add(result);
+        //}
 
-        private static DoublePole FindDoublePole(string code, List<Pole> poles, Direction direction, Period period)
+        //public static void FindDoublePolesWithCross(StockDataSet data, Period period, int barCount)
+        //{
+        //    var doubles = new List<DoublePole>();
+        //    data.DataList.ForEach(stockData => {
+        //        stockData.DoublePoles.Clear();
+        //        if (stockData.StockCrossData.Count > 0)
+        //        {
+        //            var poles = FindPoles(stockData.GetPeriodPriceList(period), stockData.StockCrossData[0].CrossDate, barCount);
+        //            poles.Reverse();
+        //            var result = FindDoublePole(stockData.Code, poles, Trend, period);
+        //            if (result != null)
+        //                stockData.DoublePoles.Add(result);
+        //        }
+        //    });
+        //}
+
+        public static DoublePole FindDoublePole(string code, List<Pole> poles, Direction direction, Period period)
         {
             if (poles == null || poles.Count == 0)
             {
@@ -39,7 +55,7 @@ namespace DataAnalyst.Pole
             for (int i = polesInterested.Count - 1; i >= 0; i--)
             {
                 var currentPole = polesInterested[i];
-                for (var j = i-1; j >= 0; j--)
+                for (var j = i - 1; j >= 0; j--)
                 {
                     if (direction == Direction.Down)
                     {
@@ -72,30 +88,13 @@ namespace DataAnalyst.Pole
             return null;
         }
 
-        public static void FindDoublePolesWithCross(StockDataSet data, Period period, int barCount)
-        {
-            var doubles = new List<DoublePole>();
-            data.DataList.ForEach(stockData => {
-                stockData.DoublePoles.Clear();
-                if (stockData.StockCrossData.Count > 0)
-                {
-                    var poles = FindPoles(stockData.GetPeriodPriceList(period), stockData.StockCrossData[0].CrossDate, barCount);
-                    poles.Reverse();
-                    var result = FindDoublePole(stockData.Code, poles, Trend, period);
-                    if (result != null)
-                        stockData.DoublePoles.Add(result);
-                }
-            });
-        }
-
         public static List<Pole> FindPoles(PriceList pl, DateTime startDate, DateTime endDate)
         {
-            var poles = new List<Pole>();
             var data = pl.Items.FindAll(i => i.Date.Between(startDate, endDate));
 
             if (data.Count == 0)
             {
-                return null;
+                return new List<Pole>();
             }
 
             return FindPoles(data);

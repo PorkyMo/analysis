@@ -14,20 +14,8 @@ namespace DataAnalyst.ETF
 
         public static void Init(StockDataSet fullData)
         {
-            ETFCodes.Clear();
-            StreamReader sr = new StreamReader(@"c:\tt\ConsoleApplication1\ConsoleApplication1\ETF\etflist.txt");
-            string line;
-            while ((line = sr.ReadLine()) != null)
-            {
-                var stockData = fullData.GetStockDataByCode(line);
-                if (stockData == null || stockData.Name.Contains("货币") || stockData.Name.Contains("债"))
-                    continue;
-
-                ETFCodes.Add(line);
-            }
-            sr.Close();
-
-            DataSet = fullData.GetSubSet(s => ETFCodes.Contains(s.Code));
+            DataSet = fullData.GetSubSet(s => s.Name.Contains("ETF"));
+            ETFCodes = DataSet.DataList.Select(d => d.Code).ToList<string>();
         }
 
         public static void GetScores(DateTime startDate, DateTime endDate)

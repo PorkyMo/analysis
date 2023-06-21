@@ -28,9 +28,25 @@ namespace DataAnalyst.Base
             SummaryList.Clear();
         }
 
-        public List<StockData> GetCrossedData()
+        public List<CrossDataInfo> GetCrossedData(Period period)
         {
-            return DataList.Where(d => d.StockCrossData.Count > 0).ToList();
+            return DataList.Select(d => d.GetCrossDataInfo(period)).Where(cd => cd.CrossDataList.Count > 0).ToList();
+        }
+
+        public List<DoublePoleDataInfo> GetDoublePoleData(Period period)
+        {
+            return DataList.Select(d => d.GetDoublePoleDataInfo(period)).Where(cd => cd.DoublePoles.Count > 0).ToList();
+        }
+
+
+        public List<TimelineInfo> GetTimelineData(Period period)
+        {
+            return DataList.Select(d => 
+                d.GetTimelineInfo(period))
+                .Where(tl => tl.Timeline.Count > 0)
+                .Where(tl => tl.Timeline.Exists(e => e.EventType == EventType.UpCross))
+                .Where(tl => tl.Timeline.Exists(e => e.EventType == EventType.TopPole))
+                .ToList();
         }
 
         public StockDataSet GetSubSet(System.Func<StockData, bool> filter)
@@ -48,6 +64,26 @@ namespace DataAnalyst.Base
         public ChangedScoreSummary GetScoreSummaryByCode(string code)
         {
             return SummaryList.Find(s => s.Code == code);
+        }
+
+        public void FindDoublePoles(Period period, DateTime startDate, DateTime endDate, Direction trend)
+        {
+            DataList.ForEach(stockData => {
+                stockData.FindDoublePole(period, startDate, endDate, trend);
+            });
+        }
+
+        public void FindDoublePolesWithCross(Period period, int barCount, Direction trend)
+        {
+            DataList.ForEach(stockData => 
+            {
+                stockData.FindDoublePolesWithCross(period, barCount, trend);
+            });
+        }
+
+        public void BuildTimeLine(Period period, DateTime startDate, DateTime endDate)
+        {
+            DataList.ForEach(stockData => stockData.BuildTimeline(period, startDate, endDate));
         }
     }
 }

@@ -49,7 +49,7 @@ namespace gp
                 if (count % 10 == 0)
                     lblProgress.Text = count.ToString();
 
-                data.AddStockData(await StockData.ReadData(file, new DateTime(2015, 01, 01), DateTime.Today));
+                data.AddStockData(await StockData.ReadData(file, new DateTime(2019, 01, 01), DateTime.Today));
             }
             ETFTrial.Init(data);
             WatchlistTrial.Init(data);
@@ -89,29 +89,44 @@ namespace gp
             StockDataSet subSet;
             if (cbIndices.Checked)
             {
-                subSet = data.GetSubSet(s => s.Code.StartsWithThese(new List<string> { "880", "399" }) 
-                                            || ETFTrial.ETFCodes.Contains(s.Code));
+                subSet = data.GetSubSet(s => ETFTrial.ETFCodes.Contains(s.Code)); // s.Code.StartsWithThese(new List<string> { "880", "399" }) 
             }
             else
             {
                 subSet = data;
             }
 
-            if (chkFindBottom.Checked)
+            if (this.cbBuildTimeline.Checked)
             {
-                var crossData = subSet.GetSubSet(stockData => stockData.StockCrossData.Count > 0);
-                PoleLib.FindDoublePolesWithCross(crossData, period, 60);
-                crossData.DataList.Where(d => d.DoublePoles.Count > 0)
-                 .ToList()
-                 .ForEach(d => txtResult.AppendText(
+                subSet.BuildTimeLine(period, calendarCross.SelectionRange.Start, DateTime.Today);
+                var data = subSet.GetTimelineData(period);
+                data.ForEach(
+                    d =>
+                    {
+                        txtResult.AppendText($"{d.Code}, {d.Name}");
+                        d.Timeline.ForEach(e => txtResult.AppendText($"{e.EventDate.ToString("yyyy-MM-dd")} {e.EventType.ToString()}"));
+                        txtResult.AppendText(Environment.NewLine);
+                    });
+            }
+            else if (chkFindBottom.Checked)
+            {
+                var crossDataList = subSet.GetCrossedData(period);
+                var codeList = crossDataList.Select(cd => cd.Code).ToList();
+                var crossData = subSet.GetSubSet(stockData => codeList.IndexOf(stockData.Code) > 0);
+                crossData.FindDoublePolesWithCross(period, 60, Direction.Down);
+                var bottomData = crossData.GetDoublePoleData(period);
+
+                bottomData.ForEach(d => txtResult.AppendText(
                      $"{d.Code}, {d.Name}, {d.DoublePoles[0].Pole1.Item.Date.ToString("yyyy-MM-dd")}, {d.DoublePoles[0].Pole2.Item.Date.ToString("yyyy-MM-dd")}, {Environment.NewLine}"));
             }
             else
             {
-                foreach (var c in subSet.GetCrossedData())
+                var crossDataList = subSet.GetCrossedData(period);
+                crossDataList.Sort((cd1, cd2) => cd1.CrossDataList[0].CrossDate.CompareTo(cd2.CrossDataList[0].CrossDate));
+                foreach (var cd in crossDataList)
                 {
-                    var d = c.StockCrossData[0];
-                    txtResult.AppendText($"{d.Period}, {c.Code}, {c.Name} crossed at {d.CrossDate.ToString("yyyy-MM-dd")} {Environment.NewLine}");
+                    var d = cd.CrossDataList[0];
+                    txtResult.AppendText($"{cd.Period}, {cd.Code}, {cd.Name} crossed at {d.CrossDate.ToString("yyyy-MM-dd")} {Environment.NewLine}");
                 }
             }
         }
@@ -153,10 +168,10 @@ namespace gp
             else if (this.rbWeekPole.Checked)
                 period = Period.Week;
 
-            PoleLib.FindDoublePoles(data, period, calendarPoleStart.SelectionStart, calendarPoleEnd.SelectionEnd);
-            data.DataList.Where(d => d.DoublePoles.Count > 0)
-                .ToList()
-                .ForEach(d => txtResult.AppendText(
+            data.FindDoublePoles(period, calendarPoleStart.SelectionStart, calendarPoleEnd.SelectionEnd, Direction.Down);
+            var bottomData = data.GetDoublePoleData(period);
+
+            bottomData.ForEach(d => txtResult.AppendText(
                     $"{d.Code}, {d.Name}, {d.DoublePoles[0].Pole1.Item.Date.ToString("yyyy-MM-dd")}, {d.DoublePoles[0].Pole2.Item.Date.ToString("yyyy-MM-dd")}, {Environment.NewLine}"));
         }
 
@@ -215,36 +230,36 @@ namespace gp
 
         private void FindTurning()
         {
-            var dataset = chkWatchlist.Checked ? WatchlistTrial.DataSet
-                : chkBlockIndices.Checked ? this.data.GetSubSet(s => s.Code.StartsWith("880")) : this.data; 
+            //var dataset = chkWatchlist.Checked ? WatchlistTrial.DataSet
+            //    : chkBlockIndices.Checked ? this.data.GetSubSet(s => s.Code.StartsWith("880")) : this.data; 
 
-            if (chkAllStocks.Checked || chkWatchlist.Checked || chkBlockIndices.Checked)
-            {
-                List<Tuple<string, string, DateTime>> results = new List<Tuple<string, string, DateTime>>();
+            //if (chkAllStocks.Checked || chkWatchlist.Checked || chkBlockIndices.Checked)
+            //{
+            //    List<Tuple<string, string, DateTime>> results = new List<Tuple<string, string, DateTime>>();
 
-                dataset.DataList.ForEach(d => {
-                    d.FindTurningBackward(Period.Day, DateTime.Today.AddDays(-30), 3);
-                    if (d.Turnings.Count > 0)
-                    {
-                        results.Add(new Tuple<string, string, DateTime>(d.Code, d.Name, d.Turnings[0]));
-                    }
-                });
+            //    dataset.DataList.ForEach(d => {
+            //        d.FindTurningBackward(Period.Day, DateTime.Today.AddDays(-30), 3);
+            //        if (d.Turnings.Count > 0)
+            //        {
+            //            results.Add(new Tuple<string, string, DateTime>(d.Code, d.Name, d.Turnings[0]));
+            //        }
+            //    });
 
-                //results.Sort((t1, t2) => t1.Item3 >= t2.Item3 ? 1 : 0);
-                results.Sort((t1, t2) => t1.Item3.CompareTo(t2.Item3));
-                results.ForEach(t => txtResult.AppendText($"{t.Item1}, {t.Item2}, {t.Item3.ToString("dd-MM-yyyy")} {Environment.NewLine}"));
-            }
-            else if (textTurningStock.TextLength > 0)
-            {
-                var stocks = textTurningStock.Text.Split(',').ToList();
-                dataset.DataList.ForEach(d => {
-                    if (stocks.Contains(d.Code))
-                    {
-                        d.FindTurningForward(Period.Day, DateTime.Now.AddYears(-5).AddMonths(-3), 3);
-                        d.Turnings.ForEach(t => txtResult.AppendText($"{t.ToString()} {Environment.NewLine}"));
-                    }
-                });
-            }
+            //    //results.Sort((t1, t2) => t1.Item3 >= t2.Item3 ? 1 : 0);
+            //    results.Sort((t1, t2) => t1.Item3.CompareTo(t2.Item3));
+            //    results.ForEach(t => txtResult.AppendText($"{t.Item1}, {t.Item2}, {t.Item3.ToString("dd-MM-yyyy")} {Environment.NewLine}"));
+            //}
+            //else if (textTurningStock.TextLength > 0)
+            //{
+            //    var stocks = textTurningStock.Text.Split(',').ToList();
+            //    dataset.DataList.ForEach(d => {
+            //        if (stocks.Contains(d.Code))
+            //        {
+            //            d.FindTurningForward(Period.Day, DateTime.Now.AddYears(-5).AddMonths(-3), 3);
+            //            d.Turnings.ForEach(t => txtResult.AppendText($"{t.ToString()} {Environment.NewLine}"));
+            //        }
+            //    });
+            //}
 
         }
 

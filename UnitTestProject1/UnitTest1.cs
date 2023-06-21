@@ -4,6 +4,7 @@ using DataAnalyst.Base;
 using System.Collections.Generic;
 using DataAnalyst.Pole;
 using DataAnalyst.Portfolio;
+using DataAnalyst.Cross;
 using MailKit.Net.Smtp;
 using MailKit;
 using MimeKit;
@@ -15,7 +16,7 @@ namespace UnitTestProject1
     {
         private StockData GetStockData()
         {
-            return new StockData()
+            var stockData = new StockData()
             {
                 Code = "Test",
                 RawData = new PriceList()
@@ -55,6 +56,13 @@ namespace UnitTestProject1
                     }
                 }
             };
+
+            foreach (var v in Enum.GetValues(typeof(Period)))
+            {
+                stockData.StockAnalysedData.Add(new AnalysedData((Period)v, stockData.RawData));
+            }
+
+            return stockData;
         }
 
         [TestMethod]
@@ -94,20 +102,14 @@ namespace UnitTestProject1
         public void Test_Cross()
         {
             var stockData = GetStockData();
-            stockData.AddAveragedData(Period.Day, 5);
-            stockData.AddAveragedData(Period.Day, 10);
-            stockData.AddAveragedData(Period.Day, 20);
-            stockData.AddAveragedData(Period.Week, 5);
-            stockData.AddAveragedData(Period.Week, 10);
-            stockData.AddAveragedData(Period.Week, 20);
-            stockData.AddAveragedData(Period.Month, 5);
-            stockData.AddAveragedData(Period.Month, 10);
-            stockData.AddAveragedData(Period.Month, 20);
+            var dayData = stockData.StockAnalysedData.Find(ad => ad.Period == Period.Day);
+            dayData.AddAveragedData(5);
+            dayData.AddAveragedData(10);
 
-            Assert.IsTrue(stockData.AveragedPriceCrossed(stockData.FindAverageDataList(Period.Day, 5), stockData.FindAverageDataList(Period.Day, 10), new DateTime(2017, 8, 25), true));
-            Assert.IsFalse(stockData.AveragedPriceCrossed(stockData.FindAverageDataList(Period.Day, 5), stockData.FindAverageDataList(Period.Day, 10), new DateTime(2017, 8, 24), true));
-            Assert.IsTrue(stockData.AveragedPriceCrossed(stockData.FindAverageDataList(Period.Day, 5), stockData.FindAverageDataList(Period.Day, 10), new DateTime(2017, 8, 29), 5, true));
-            Assert.IsFalse(stockData.AveragedPriceCrossed(stockData.FindAverageDataList(Period.Day, 5), stockData.FindAverageDataList(Period.Day, 10), new DateTime(2017, 8, 29), 2, true));
+            Assert.IsTrue(CrossDataLib.AveragedPriceCrossed(dayData.FindAverageDataList(5), dayData.FindAverageDataList(10), new DateTime(2017, 8, 25), true));
+            Assert.IsFalse(CrossDataLib.AveragedPriceCrossed(dayData.FindAverageDataList(5), dayData.FindAverageDataList(10), new DateTime(2017, 8, 24), true));
+            Assert.IsTrue(CrossDataLib.AveragedPriceCrossed(dayData.FindAverageDataList(5), dayData.FindAverageDataList(10), new DateTime(2017, 8, 29), 5, true));
+            Assert.IsFalse(CrossDataLib.AveragedPriceCrossed(dayData.FindAverageDataList(5), dayData.FindAverageDataList(10), new DateTime(2017, 8, 29), 2, true));
         }
 
         [TestMethod]
@@ -140,8 +142,13 @@ namespace UnitTestProject1
                 }
             };
 
-            PoleLib.FindDoublePole(stockData, Period.Day, new DateTime(2019, 10, 9), new DateTime(2019, 11, 13));
-            Assert.IsNotNull(stockData.DoublePoles.Count > 0);
+            foreach (var v in Enum.GetValues(typeof(Period)))
+            {
+                stockData.StockAnalysedData.Add(new AnalysedData((Period)v, stockData.RawData));
+            }
+
+            stockData.FindDoublePole(Period.Day, new DateTime(2019, 10, 9), new DateTime(2019, 11, 13), Direction.Down);
+            Assert.AreNotEqual(stockData.GetDoublePoleDataInfo(Period.Day).DoublePoles.Count, 0);
         }
 
         [TestMethod]
@@ -180,7 +187,7 @@ namespace UnitTestProject1
             using (var smtpClient = new SmtpClient())
             {
                 smtpClient.Connect("smtp.gmail.com", 465, MailKit.Security.SecureSocketOptions.SslOnConnect);
-                smtpClient.Authenticate("gingin.gui@gmail.com", "Porky20151228");
+                smtpClient.Authenticate("gingin.gui@gmail.com", "mkyemebsvolahysr");
                 smtpClient.Send(mailMessage);
                 smtpClient.Disconnect(true);
             }

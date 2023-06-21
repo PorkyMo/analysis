@@ -10,12 +10,13 @@ namespace DataAnalyst.Portfolio
         private const decimal StopLossPercentage = 0.06M; //from purchasePrice
         private const decimal StopProfitPercentage = 0.1M; //from highest price
         private const decimal ProfitDownToLossPercentage = 0.01M; //from purchasePrice
+        private const string HoldingsFile = @"C:\git\analysis\ConsoleApplication1\Portfolio\Holdings.txt";
 
         public List<AlgoHolding> Holdings = new List<AlgoHolding>();
 
         public Portfolio()
         {
-            Holdings = Newtonsoft.Json.JsonConvert.DeserializeObject<List<AlgoHolding>>(File.ReadAllText(@"c:\tt\ConsoleApplication1\ConsoleApplication1\Portfolio\Holdings.txt"));
+            Holdings = Newtonsoft.Json.JsonConvert.DeserializeObject<List<AlgoHolding>>(File.ReadAllText(HoldingsFile));
         }
 
         public void StartWorking()
@@ -41,7 +42,7 @@ namespace DataAnalyst.Portfolio
             {
                 Check(holding, data.Find(d => d.Code == holding.Code));
             }
-            using (var sw = new StreamWriter(@"c:\tt\ConsoleApplication1\ConsoleApplication1\Portfolio\Holdings.txt", false))
+            using (var sw = new StreamWriter(HoldingsFile, false))
             {
                 sw.Write(Newtonsoft.Json.JsonConvert.SerializeObject(Holdings, Newtonsoft.Json.Formatting.Indented));
             }

@@ -9,7 +9,7 @@ namespace DataAnalyst.Mail
         private static void SetConfig(SmtpClient client)
         {
             client.Connect("smtp.gmail.com", 465, MailKit.Security.SecureSocketOptions.SslOnConnect);
-            client.Authenticate("gingin.gui@gmail.com", "Porky20151228");
+            client.Authenticate("gingin.gui@gmail.com", "mkyemebsvolahysr");
         }
 
         private static void SendMessage(string stockCode, decimal puchasePrice, decimal currentPrice, string subject)

@@ -92,6 +92,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Base\TimelineInfo.cs" />
+    <Compile Include="Base\Event.cs" />
+    <Compile Include="Base\AnalysedData.cs" />
+    <Compile Include="Base\CrossDataInfo.cs" />
+    <Compile Include="Base\DoublePoleDataInfo.cs" />
+    <Compile Include="Base\StockData.cs" />
     <Compile Include="Base\StockDataSet.cs" />
     <Compile Include="ETF\ETFTrial.cs" />
     <Compile Include="Mail\MailService.cs" />
@@ -114,7 +120,6 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Score\ScoreLib.cs" />
-    <Compile Include="Base\StockData.cs" />
     <Compile Include="Base\Utils.cs" />
     <Compile Include="Watchlist\WatchlistTrial.cs" />
   </ItemGroup>

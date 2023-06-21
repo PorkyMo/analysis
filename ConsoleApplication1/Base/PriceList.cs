@@ -21,6 +21,11 @@ namespace DataAnalyst.Base
 
         public int FindIndex(DateTime date, DateNotFound option)
         {
+            if (Items == null || Items.Count == 0)
+            {
+                return -1;
+            }
+
             while (Items.FindIndex(i => i.Date.Date == date.Date) == -1)
             {
                 switch(option)

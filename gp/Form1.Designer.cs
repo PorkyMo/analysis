@@ -80,6 +80,7 @@
             this.txtDays = new System.Windows.Forms.TextBox();
             this.btnNewStocks = new System.Windows.Forms.Button();
             this.tabTurning = new System.Windows.Forms.TabPage();
+            this.chkBlockIndices = new System.Windows.Forms.CheckBox();
             this.chkWatchlist = new System.Windows.Forms.CheckBox();
             this.chkAllStocks = new System.Windows.Forms.CheckBox();
             this.label14 = new System.Windows.Forms.Label();
@@ -93,7 +94,7 @@
             this.txtResult = new System.Windows.Forms.TextBox();
             this.btnClear = new System.Windows.Forms.Button();
             this.lblProgress = new System.Windows.Forms.Label();
-            this.chkBlockIndices = new System.Windows.Forms.CheckBox();
+            this.cbBuildTimeline = new System.Windows.Forms.CheckBox();
             this.tabFeatures.SuspendLayout();
             this.tabCross.SuspendLayout();
             this.groupBox1.SuspendLayout();
@@ -128,6 +129,7 @@
             // 
             // tabCross
             // 
+            this.tabCross.Controls.Add(this.cbBuildTimeline);
             this.tabCross.Controls.Add(this.cbIndices);
             this.tabCross.Controls.Add(this.chkFindBottom);
             this.tabCross.Controls.Add(this.label2);
@@ -144,7 +146,7 @@
             // cbIndices
             // 
             this.cbIndices.AutoSize = true;
-            this.cbIndices.Location = new System.Drawing.Point(440, 461);
+            this.cbIndices.Location = new System.Drawing.Point(318, 461);
             this.cbIndices.Name = "cbIndices";
             this.cbIndices.Size = new System.Drawing.Size(191, 29);
             this.cbIndices.TabIndex = 4;
@@ -670,6 +672,16 @@
             this.tabTurning.Text = "Lines Turning";
             this.tabTurning.UseVisualStyleBackColor = true;
             // 
+            // chkBlockIndices
+            // 
+            this.chkBlockIndices.AutoSize = true;
+            this.chkBlockIndices.Location = new System.Drawing.Point(55, 311);
+            this.chkBlockIndices.Name = "chkBlockIndices";
+            this.chkBlockIndices.Size = new System.Drawing.Size(153, 29);
+            this.chkBlockIndices.TabIndex = 10;
+            this.chkBlockIndices.Text = "Block Indices";
+            this.chkBlockIndices.UseVisualStyleBackColor = true;
+            // 
             // chkWatchlist
             // 
             this.chkWatchlist.AutoSize = true;
@@ -765,6 +777,9 @@
             // 
             // txtResult
             // 
+            this.txtResult.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.txtResult.Location = new System.Drawing.Point(885, 16);
             this.txtResult.Multiline = true;
             this.txtResult.Name = "txtResult";
@@ -790,15 +805,15 @@
             this.lblProgress.Size = new System.Drawing.Size(0, 25);
             this.lblProgress.TabIndex = 7;
             // 
-            // chkBlockIndices
+            // cbBuildTimeline
             // 
-            this.chkBlockIndices.AutoSize = true;
-            this.chkBlockIndices.Location = new System.Drawing.Point(55, 311);
-            this.chkBlockIndices.Name = "chkBlockIndices";
-            this.chkBlockIndices.Size = new System.Drawing.Size(153, 29);
-            this.chkBlockIndices.TabIndex = 10;
-            this.chkBlockIndices.Text = "Block Indices";
-            this.chkBlockIndices.UseVisualStyleBackColor = true;
+            this.cbBuildTimeline.AutoSize = true;
+            this.cbBuildTimeline.Location = new System.Drawing.Point(564, 461);
+            this.cbBuildTimeline.Name = "cbBuildTimeline";
+            this.cbBuildTimeline.Size = new System.Drawing.Size(160, 29);
+            this.cbBuildTimeline.TabIndex = 5;
+            this.cbBuildTimeline.Text = "Build Timeline";
+            this.cbBuildTimeline.UseVisualStyleBackColor = true;
             // 
             // Form1
             // 
@@ -917,6 +932,7 @@
         private System.Windows.Forms.TabPage tabCheck;
         private System.Windows.Forms.Button btnCheck;
         private System.Windows.Forms.CheckBox chkBlockIndices;
+        private System.Windows.Forms.CheckBox cbBuildTimeline;
     }
 }
 

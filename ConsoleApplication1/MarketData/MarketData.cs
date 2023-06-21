@@ -7,7 +7,8 @@ namespace DataAnalyst.MarketData
 {
     public class MarketData
     {
-        private const string PriceUrl = "http://hq.sinajs.cn/rn=1413630633912&";
+        //private const string PriceUrl = "http://hq.sinajs.cn/rn=1413630633912&";
+        private const string PriceUrl = "https://qt.gtimg.cn/q=";
         private const string InfoUrl = "http://hq.sinajs.cn/rn=1413630633912&";
         private static List<char> Deli;
 
@@ -41,7 +42,7 @@ namespace DataAnalyst.MarketData
             {
                 sb.Length = sb.Length - 1;
             }
-            string uri = $"{PriceUrl}list={sb.ToString()}";
+            string uri = $"{PriceUrl}{sb.ToString()}";
 
             var quotes = new List<Quote>();
 
@@ -61,24 +62,26 @@ namespace DataAnalyst.MarketData
         {
             try
             {
-                if (line.StartsWith("var hq_str_sh") || line.StartsWith("var hq_str_sz"))
+                if (line.StartsWith("v_sh") || line.StartsWith("v_sz"))
                 {
-                    string infoString = line.Substring("var hq_str_".Length);
+                    // strip beginning v_sh600000=" and ending ";
+                    string infoString = line.Substring("v_sh600000=\"".Length);
+                    infoString = infoString.Substring(0, infoString.Length - 2);
 
-                    string[] fields = line.Substring("var hq_str_sz002396=\"".Length).Split(',');
+                    string[] fields = line.Split('~');
 
                     Quote quote = new Quote();
-                    quote.Exchange = infoString.Substring(0, 2);
-                    quote.Code = infoString.Substring(2, 6);
+                    quote.Exchange = line.Substring(2, 2);
 
-                    //0 name, 1 open, 2 previous, close, 3 close, 4 high, 5 low, 8 volume, 
-                    quote.Name = fields[0];
-                    quote.Open = decimal.Parse(fields[1]);
-                    quote.PreviousClose = decimal.Parse(fields[2]);
+                    //1 name, 2 code, 3 close, 4 previous, 5 open, 32 high, 33 low, 36 volume, 
+                    quote.Name = fields[1];
+                    quote.Code = fields[2];
+                    quote.PreviousClose = decimal.Parse(fields[4]);
+                    quote.Open = decimal.Parse(fields[5]);
                     quote.Close = decimal.Parse(fields[3]);
-                    quote.High = decimal.Parse(fields[4]);
-                    quote.Low = decimal.Parse(fields[5]);
-                    quote.Volume = int.Parse(fields[8]);
+                    quote.High = decimal.Parse(fields[33]);
+                    quote.Low = decimal.Parse(fields[34]);
+                    quote.Volume = int.Parse(fields[36]);
                     return quote;
                 }
             }
